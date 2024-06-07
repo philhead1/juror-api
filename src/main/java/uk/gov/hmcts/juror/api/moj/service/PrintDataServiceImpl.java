@@ -28,6 +28,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 
+import static uk.gov.hmcts.juror.api.moj.exception.MojException.BusinessRuleViolation.ErrorCode.DAY_ALREADY_EXISTS;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = {@Autowired})
@@ -178,6 +180,16 @@ public class PrintDataServiceImpl implements PrintDataService {
             courtLocationService.getCourtLocation(PrintDataServiceImpl.BUREAU_LOC_CODE),
             welshCourtLocationRepository.findByLocCode(jurorPool.getCourt().getLocCode())
         ));
+    }
+
+    @Override
+    public void checkLetterInBulkPrint(String jurorNumber, String formType, LocalDate creationDate,
+                                       boolean extractedFlag) {
+        if (!bulkPrintDataRepository.findByJurorNoAndFormTypeAndCreationDateAndExtractedFlag(jurorNumber, formType,
+            creationDate, extractedFlag).isEmpty()) {
+            throw new MojException.BusinessRuleViolation(
+                "Letter already exists in bulk print queue for the same day", DAY_ALREADY_EXISTS);
+        }
     }
 
     public void commitData(LetterBase letter) {
